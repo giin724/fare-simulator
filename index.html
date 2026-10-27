@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fujikyu Yamanashi Hire 料金シミュレータ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: hero band with mode tabs, then a two-column calculator (inputs | result card), then a fare table. */
+:root{
+  --bg:#f6f7fb;        /* cool paper */
+  --surface:#ffffff;
+  --fg:#1b2235;        /* indigo ink */
+  --muted:#5e667c;
+  --line:#d9dde8;
+  --accent:#1d4a9c;    /* Fuji lake indigo */
+  --accent-fg:#ffffff;
+  --accent-soft:#e6edf9;
+  --peak:#c2442f;      /* sunrise on the peak, used once */
+  --display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1420;--surface:#171e2e;--fg:#e9ecf4;--muted:#9aa3ba;--line:#2a3348;
+  --accent:#7fa6ea;--accent-fg:#0f1420;--accent-soft:#1d2a45;--peak:#f08a73;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1420;--surface:#171e2e;--fg:#e9ecf4;--muted:#9aa3ba;--line:#2a3348;
+  --accent:#7fa6ea;--accent-fg:#0f1420;--accent-soft:#1d2a45;--peak:#f08a73;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:14px;margin-bottom:22px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,34px);line-height:1.2;margin:0;text-wrap:balance}
+h1 small{display:block;font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);letter-spacing:.08em;margin-bottom:4px}
+.lang{display:flex;gap:4px}
+.lang button{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;border-radius:4px}
+.lang button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.lang button:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:18px;background:var(--surface)}
+.tabs button{flex:1;font:inherit;font-weight:700;padding:12px 8px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media (max-width:640px){.calc{grid-template-columns:1fr}}
+.panel{min-width:0}
+label{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field{margin-bottom:16px}
+select,input[type=number]{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
+.row{display:flex;gap:10px}
+.row>*{flex:1;min-width:0}
+.cars{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.car{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--surface);cursor:pointer}
+.car input{position:absolute;opacity:0}
+.car:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.car:has(input:focus-visible){outline:2px solid var(--accent)}
+.car b{display:block;font-size:15px}
+.car span{font-size:12px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+
+.result{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;position:sticky;top:env(safe-area-inset-top,0px)}
+.result .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.price{font-family:var(--display);font-weight:800;font-size:clamp(36px,7vw,52px);line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.price small{font-size:.45em;font-weight:600;margin-left:4px}
+.about{font-size:13px;color:var(--muted)}
+.breakdown{list-style:none;padding:0;margin:16px 0 0;border-top:1px solid var(--line)}
+.breakdown li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.breakdown li span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.notes{font-size:12px;color:var(--muted);margin-top:14px;padding-left:1.2em}
+.notes li{margin-bottom:3px}
+.cta{display:block;text-align:center;margin-top:18px;padding:13px;border-radius:6px;background:var(--accent);color:var(--accent-fg);font-weight:700;text-decoration:none}
+
+h2{font-family:var(--display);font-size:20px;margin:40px 0 12px;font-weight:800}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--accent-soft)}
+.toll{color:var(--peak);font-size:11px;font-weight:700;margin-left:6px}
+footer{margin-top:28px;font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.price{transition:opacity .15s}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <h1><small data-i="brand">Fujikyu Yamanashi Hire</small><span data-i="title">料金シミュレータ</span></h1>
+  <div class="lang" role="group" aria-label="Language">
+    <button type="button" data-lang="ja" aria-pressed="true">日本語</button>
+    <button type="button" data-lang="en" aria-pressed="false">English</button>
+    <button type="button" data-lang="zh" aria-pressed="false">中文</button>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button type="button" role="tab" id="tab-route" aria-selected="true" data-i="tabRoute">区間料金（メーター）</button>
+  <button type="button" role="tab" id="tab-charter" aria-selected="false" data-i="tabCharter">貸切・観光タクシー（時間制）</button>
+</div>
+
+<div class="calc">
+  <div class="panel">
+    <div class="field">
+      <label data-i="carType">車種</label>
+      <div class="cars">
+        <label class="car" style="position:relative"><input type="radio" name="car" value="mid" id="car-mid" checked><b data-i="carMid">中型車</b><span data-i="carMidSub">〜4名 / 初乗り600円</span></label>
+        <label class="car" style="position:relative"><input type="radio" name="car" value="jumbo" id="car-jumbo"><b data-i="carJumbo">ジャンボ</b><span data-i="carJumboSub">〜9名 / 初乗り680円</span></label>
+      </div>
+    </div>
+
+    <div id="pane-route">
+      <div class="field">
+        <label for="from" data-i="from">出発地</label>
+        <select id="from"></select>
+      </div>
+      <div class="field">
+        <label for="to" data-i="to">目的地</label>
+        <select id="to"></select>
+      </div>
+      <div class="field">
+        <label for="km" data-i="km">距離（km）</label>
+        <input type="number" id="km" min="0.1" step="0.1" value="3.3">
+        <p class="hint" data-i="kmHint">区間を選ぶと自動入力。上の一覧にない場合は距離を直接入力してください。</p>
+      </div>
+    </div>
+
+    <div id="pane-charter" hidden>
+      <div class="field">
+        <label for="hours" data-i="hours">利用時間</label>
+        <select id="hours"></select>
+      </div>
+      <div class="field">
+        <label for="pax" data-i="pax">人数</label>
+        <input type="number" id="pax" min="1" max="9" value="2">
+        <p class="hint" id="paxHint"></p>
+      </div>
+      <p class="hint" data-i="charterHint">観光タクシーは出発から帰着までの時間で計算します。富士山五合目・忍野八海・山中湖など、ご希望の行き先を予約時にお知らせください。</p>
+    </div>
+  </div>
+
+  <aside class="result" aria-live="polite">
+    <div class="eyebrow" data-i="estimate">概算料金</div>
+    <div class="price" id="price">¥0</div>
+    <div class="about" id="about"></div>
+    <ul class="breakdown" id="breakdown"></ul>
+    <ul class="notes" id="notes"></ul>
+    <a class="cta" href="#reserve" data-i="cta">この内容で予約・問い合わせ</a>
+  </aside>
+</div>
+
+<h2 data-i="tableTitle">主な区間の料金早見表</h2>
+<div class="tablewrap">
+<table id="fareTable">
+  <thead><tr><th data-i="thRoute">区間</th><th data-i="thKm">距離</th><th data-i="thMid">中型車</th><th data-i="thJumbo">ジャンボ</th></tr></thead>
+  <tbody></tbody>
+</table>
+</div>
+<footer data-i="footer">料金は距離による概算です。渋滞等による時間併用運賃、深夜早朝割増（22:00〜5:00 2割増）、有料道路・駐車場代は含まれません。</footer>
+</div>
+
+<script>
+const FARE={mid:{base:600,baseKm:1.2,step:229,hour:8000},jumbo:{base:680,baseKm:1.2,step:202,hour:9120}};
+const PLACES={
+  fujisan:{ja:"富士山駅",en:"Mt. Fuji Station",zh:"富士山站"},
+  kawaguchiko:{ja:"河口湖駅",en:"Kawaguchiko Station",zh:"河口湖站"},
+  highland:{ja:"富士急ハイランド",en:"Fuji-Q Highland",zh:"富士急乐园"},
+  arakura:{ja:"新倉山浅間公園",en:"Arakurayama Sengen Park",zh:"新仓山浅间公园"},
+  oishi:{ja:"大石公園",en:"Oishi Park",zh:"大石公园"},
+  orgel:{ja:"河口湖オルゴールの森",en:"Kawaguchiko Music Forest",zh:"河口湖音乐盒之森"},
+  oshino:{ja:"忍野八海",en:"Oshino Hakkai",zh:"忍野八海"},
+  saiko:{ja:"西湖いやしの里根場",en:"Saiko Iyashi-no-Sato Nenba",zh:"西湖治愈之里根场"},
+  yamanaka:{ja:"山中湖",en:"Lake Yamanaka",zh:"山中湖"},
+  gogome:{ja:"富士山五合目",en:"Mt. Fuji 5th Station",zh:"富士山五合目"},
+  motosu:{ja:"本栖湖",en:"Lake Motosu",zh:"本栖湖"},
+  michinoeki:{ja:"道の駅 富士吉田",en:"Fujiyoshida Roadside Station",zh:"富士吉田道之驿"}
+};
+// 目安距離（km）。実走行に合わせて修正してください。
+const ROUTES=[
+  ["fujisan","kawaguchiko",3.3],["fujisan","highland",2.0],["fujisan","arakura",1.6],["fujisan","oshino",8.5],
+  ["kawaguchiko","highland",2.5],["kawaguchiko","arakura",5.0],["kawaguchiko","oishi",6.0],["kawaguchiko","orgel",4.0],
+  ["kawaguchiko","oshino",12.0],["kawaguchiko","saiko",12.0],["kawaguchiko","yamanaka",15.0],["kawaguchiko","michinoeki",7.0],
+  ["kawaguchiko","gogome",30.0,true],["kawaguchiko","motosu",25.0]
+];
+const I18N={
+  ja:{brand:"Fujikyu Yamanashi Hire",title:"料金シミュレータ",tabRoute:"区間料金（メーター）",tabCharter:"貸切・観光タクシー（時間制）",carType:"車種",carMid:"中型車",carMidSub:"〜4名 / 初乗り600円",carJumbo:"ジャンボ",carJumboSub:"〜9名 / 初乗り680円",from:"出発地",to:"目的地",km:"距離（km）",kmHint:"区間を選ぶと自動入力。上の一覧にない場合は距離を直接入力してください。",hours:"利用時間",pax:"人数",charterHint:"観光タクシーは出発から帰着までの時間で計算します。富士山五合目・忍野八海・山中湖など、ご希望の行き先を予約時にお知らせください。",estimate:"概算料金",cta:"この内容で予約・問い合わせ",tableTitle:"主な区間の料金早見表",thRoute:"区間",thKm:"距離",thMid:"中型車",thJumbo:"ジャンボ",footer:"料金は距離による概算です。渋滞等による時間併用運賃、深夜早朝割増（22:00〜5:00 2割増）、有料道路・駐車場代は含まれません。",
+    hourUnit:"時間",perHour:"1時間あたり",base:"初乗り（1.2kmまで）",add:"加算運賃",addUnit:"ごとに100円",dist:"距離",total:"合計",approx:"約",yen:"円",pp:"1人あたり約",paxOver:"5名以上はジャンボをお選びください。",tollNote:"富士スバルラインの通行料が別途かかります。",n1:"実際の料金はメーターによります。",n2:"深夜早朝（22:00〜5:00）は2割増。",n3:"有料道路・駐車場は実費。",c1:"時間内の走行距離に制限はありません。",c2:"有料道路・駐車場・入場料は実費。",c3:"ご希望コースはご予約時にご相談ください。",toll:"有料道路あり"},
+  en:{brand:"Fujikyu Yamanashi Hire",title:"Fare Estimator",tabRoute:"Point to point (meter)",tabCharter:"Charter / sightseeing (hourly)",carType:"Vehicle",carMid:"Standard",carMidSub:"up to 4 / base ¥600",carJumbo:"Jumbo van",carJumboSub:"up to 9 / base ¥680",from:"From",to:"To",km:"Distance (km)",kmHint:"Filled in automatically when you pick a route. Not listed? Type the distance.",hours:"Duration",pax:"Passengers",charterHint:"Sightseeing charters are billed by time from pick-up to drop-off. Tell us your destinations (Mt. Fuji 5th Station, Oshino Hakkai, Lake Yamanaka…) when booking.",estimate:"Estimated fare",cta:"Book or ask about this trip",tableTitle:"Fares for popular routes",thRoute:"Route",thKm:"Distance",thMid:"Standard",thJumbo:"Jumbo",footer:"Estimates are based on distance only. Time-based charges in traffic, the late-night surcharge (20% from 22:00 to 5:00), tolls and parking are not included.",
+    hourUnit:"h",perHour:"Per hour",base:"Base fare (first 1.2 km)",add:"Distance charge",addUnit:"per ¥100",dist:"Distance",total:"Total",approx:"approx.",yen:"",pp:"about per person",paxOver:"For 5 or more passengers, choose the Jumbo van.",tollNote:"The Fuji Subaru Line toll is charged separately.",n1:"The actual fare is set by the meter.",n2:"Late-night surcharge 20% (22:00–5:00).",n3:"Tolls and parking are extra.",c1:"No distance limit within the booked time.",c2:"Tolls, parking and admission fees are extra.",c3:"Tell us your preferred route when booking.",toll:"toll road"},
+  zh:{brand:"Fujikyu Yamanashi Hire",title:"车费估算",tabRoute:"区间车费（计程表）",tabCharter:"包车·观光出租车（按小时）",carType:"车型",carMid:"中型车",carMidSub:"最多4人 / 起步价600日元",carJumbo:"大型车（Jumbo）",carJumboSub:"最多9人 / 起步价680日元",from:"出发地",to:"目的地",km:"距离（公里）",kmHint:"选择区间后自动填写。列表中没有的区间请直接输入距离。",hours:"使用时间",pax:"人数",charterHint:"观光出租车按从出发到返回的时间计费。预约时请告知您想去的地方（富士山五合目、忍野八海、山中湖等）。",estimate:"预估车费",cta:"按此内容预约·咨询",tableTitle:"主要区间车费一览",thRoute:"区间",thKm:"距离",thMid:"中型车",thJumbo:"大型车",footer:"车费为按距离估算。因堵车产生的时间费用、深夜加价（22:00〜5:00加收20%）、高速公路费及停车费不包含在内。",
+    hourUnit:"小时",perHour:"每小时",base:"起步价（1.2公里内）",add:"加算车费",addUnit:"每100日元",dist:"距离",total:"合计",approx:"约",yen:"日元",pp:"每人约",paxOver:"5人以上请选择大型车。",tollNote:"富士斯巴鲁线通行费另计。",n1:"实际车费以计程表为准。",n2:"深夜（22:00〜5:00）加收20%。",n3:"高速公路费、停车费另计。",c1:"预约时间内不限行驶距离。",c2:"高速费、停车费、门票另计。",c3:"行程路线可在预约时商量。",toll:"有收费道路"}
+};
+let lang="ja",mode="route";
+const $=id=>document.getElementById(id);
+const t=k=>I18N[lang][k];
+const yen=n=>"¥"+n.toLocaleString("ja-JP");
+const meterFare=(car,km)=>{const f=FARE[car];const m=Math.max(0,Math.round(km*1000)-f.baseKm*1000);return f.base+Math.ceil(m/f.step)*100};
+const name=k=>PLACES[k][lang];
+
+function fillSelects(){
+  const keys=Object.keys(PLACES),from=$("from"),to=$("to");
+  const pf=from.value||"fujisan",pt=to.value||"kawaguchiko";
+  from.innerHTML=keys.map(k=>`<option value="${k}">${name(k)}</option>`).join("");
+  to.innerHTML=from.innerHTML;from.value=pf;to.value=pt;
+  const h=$("hours"),ph=h.value||"3";
+  h.innerHTML=[2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n} ${t("hourUnit")}</option>`).join("");h.value=ph;
+}
+function routeKm(a,b){const r=ROUTES.find(r=>(r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a));return r||null}
+function syncKm(){const r=routeKm($("from").value,$("to").value);if(r)$("km").value=r[2];}
+function render(){
+  const car=document.querySelector('input[name=car]:checked').value,f=FARE[car];
+  const bd=$("breakdown"),notes=$("notes");bd.innerHTML="";notes.innerHTML="";
+  if(mode==="route"){
+    const km=parseFloat($("km").value)||0,total=meterFare(car,km);
+    const r=routeKm($("from").value,$("to").value);
+    $("price").innerHTML=`${t("approx")} ${yen(total)}<small>${t("yen")}</small>`;
+    $("about").textContent=`${name($("from").value)} → ${name($("to").value)} · ${km} km`;
+    const addM=Math.max(0,Math.round(km*1000)-1200),steps=Math.ceil(addM/f.step);
+    bd.innerHTML=`<li><span>${t("base")}</span><span>${yen(f.base)}</span></li>
+      <li><span>${t("add")} ${f.step}m ${t("addUnit")} × ${steps}</span><span>${yen(steps*100)}</span></li>
+      <li><span><b>${t("total")}</b></span><span><b>${yen(total)}</b></span></li>`;
+    const ns=[t("n1"),t("n2"),t("n3")];if(r&&r[3])ns.unshift(t("tollNote"));
+    notes.innerHTML=ns.map(n=>`<li>${n}</li>`).join("");
+  }else{
+    const h=parseInt($("hours").value,10),pax=parseInt($("pax").value,10)||1,total=f.hour*h;
+    $("price").innerHTML=`${yen(total)}<small>${t("yen")}</small>`;
+    $("about").textContent=`${h} ${t("hourUnit")} · ${t("pp")} ${yen(Math.ceil(total/pax))}`;
+    bd.innerHTML=`<li><span>${t("perHour")}</span><span>${yen(f.hour)}</span></li>
+      <li><span>× ${h} ${t("hourUnit")}</span><span>${yen(total)}</span></li>`;
+    $("paxHint").textContent=(car==="mid"&&pax>4)?t("paxOver"):"";
+    notes.innerHTML=[t("c1"),t("c2"),t("c3")].map(n=>`<li>${n}</li>`).join("");
+  }
+}
+function renderTable(){
+  $("fareTable").querySelector("tbody").innerHTML=ROUTES.map(r=>
+    `<tr><td>${name(r[0])} ⇄ ${name(r[1])}${r[3]?`<span class="toll">${t("toll")}</span>`:""}</td><td class="num">${r[2].toFixed(1)} km</td><td class="num">${yen(meterFare("mid",r[2]))}</td><td class="num">${yen(meterFare("jumbo",r[2]))}</td></tr>`).join("");
+}
+function applyLang(){
+  document.documentElement.lang=lang==="zh"?"zh-CN":lang;
+  document.querySelectorAll("[data-i]").forEach(el=>{el.textContent=t(el.dataset.i)});
+  document.querySelectorAll(".lang button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.lang===lang)));
+  fillSelects();renderTable();render();
+}
+function setMode(m){
+  mode=m;$("pane-route").hidden=m!=="route";$("pane-charter").hidden=m!=="charter";
+  $("tab-route").setAttribute("aria-selected",String(m==="route"));$("tab-charter").setAttribute("aria-selected",String(m==="charter"));
+  render();
+}
+document.querySelectorAll(".lang button").forEach(b=>b.addEventListener("click",()=>{lang=b.dataset.lang;try{localStorage.setItem("lang",lang)}catch(e){}applyLang()}));
+$("tab-route").addEventListener("click",()=>setMode("route"));
+$("tab-charter").addEventListener("click",()=>setMode("charter"));
+["from","to"].forEach(id=>$(id).addEventListener("change",()=>{syncKm();render()}));
+["km","hours","pax"].forEach(id=>$(id).addEventListener("input",render));
+document.querySelectorAll('input[name=car]').forEach(r=>r.addEventListener("change",render));
+try{const s=localStorage.getItem("lang");if(s&&I18N[s])lang=s}catch(e){}
+applyLang();
+</script>
+</body>
+</html>
