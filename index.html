@@ -4,98 +4,132 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Fujikyu Yamanashi Hire 料金シミュレータ</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yantramanav:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap">
 <style>
-/* Layout: hero band with mode tabs, then a two-column calculator (inputs | result card), then a fare table. */
+/* Layout: site-matching blue header bar, photo hero with white title, then white calculator on light grey, fare table below. */
 :root{
-  --bg:#f6f7fb;        /* cool paper */
+  --bg:#f5f5f5;         /* site section grey */
   --surface:#ffffff;
-  --fg:#1b2235;        /* indigo ink */
-  --muted:#5e667c;
-  --line:#d9dde8;
-  --accent:#1d4a9c;    /* Fuji lake indigo */
-  --accent-fg:#ffffff;
-  --accent-soft:#e6edf9;
-  --peak:#c2442f;      /* sunrise on the peak, used once */
-  --display:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
-  --body:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --fg:#222222;         /* site body text */
+  --muted:#777777;
+  --line:#e3e6ea;
+  --brand:#0095d9;      /* site header / h2 blue */
+  --brand-dark:#187fc4;
+  --brand-soft:#e6f4fc;
+  --accent2:#a64a97;    /* site purple nav (お問合せ) */
+  --on-brand:#ffffff;
+  --peak:#a94442;
+  --latin:"Yantramanav",system-ui,sans-serif;
+  --body:"Yu Gothic Medium","游ゴシック Medium",YuGothic,"游ゴシック体","Noto Sans JP","ヒラギノ角ゴ Pro W3",Meiryo,sans-serif;
+  --num:"Yantramanav",system-ui,sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1420;--surface:#171e2e;--fg:#e9ecf4;--muted:#9aa3ba;--line:#2a3348;
-  --accent:#7fa6ea;--accent-fg:#0f1420;--accent-soft:#1d2a45;--peak:#f08a73;color-scheme:dark}}
+  --bg:#121923;--surface:#1b2430;--fg:#eaeef3;--muted:#9aa6b4;--line:#2c3744;
+  --brand:#1aa3e6;--brand-dark:#0e8ed0;--brand-soft:#17364a;--accent2:#c06db2;--peak:#f08a73;color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0f1420;--surface:#171e2e;--fg:#e9ecf4;--muted:#9aa3ba;--line:#2a3348;
-  --accent:#7fa6ea;--accent-fg:#0f1420;--accent-soft:#1d2a45;--peak:#f08a73;color-scheme:dark}
+  --bg:#121923;--surface:#1b2430;--fg:#eaeef3;--muted:#9aa6b4;--line:#2c3744;
+  --brand:#1aa3e6;--brand-dark:#0e8ed0;--brand-soft:#17364a;--accent2:#c06db2;--peak:#f08a73;color-scheme:dark}
 
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.6;margin:0}
-.wrap{max-width:960px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:14px;margin-bottom:22px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(24px,4vw,34px);line-height:1.2;margin:0;text-wrap:balance}
-h1 small{display:block;font-family:var(--body);font-weight:500;font-size:13px;color:var(--muted);letter-spacing:.08em;margin-bottom:4px}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.7;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--brand)}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.inner{max-width:1060px;margin:0 auto}
+
+.topbar{background:var(--brand);color:var(--on-brand)}
+.topbar .inner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:10px}
+.logo{display:flex;align-items:center;gap:10px;color:var(--on-brand);text-decoration:none;font-weight:700;font-size:20px;letter-spacing:.02em}
+.logo img{height:32px;width:auto;display:block}
+.logo .alt{display:none}
+.logo img:not([src]),.logo img[data-failed]{display:none}
+.logo img[data-failed]+.alt{display:inline}
+.tel{display:flex;align-items:center;gap:8px;font-family:var(--latin);font-weight:700;font-size:22px;color:var(--on-brand);text-decoration:none;white-space:nowrap}
+.tel small{font-family:var(--body);font-size:12px;font-weight:400;opacity:.95}
 .lang{display:flex;gap:4px}
-.lang button{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;border-radius:4px}
-.lang button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.lang button:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lang button{font:inherit;font-size:12px;padding:5px 10px;border:1px solid rgba(255,255,255,.6);background:transparent;color:var(--on-brand);cursor:pointer;border-radius:3px}
+.lang button[aria-pressed="true"]{background:var(--on-brand);color:var(--brand);border-color:var(--on-brand)}
+.lang button:focus-visible,.tabs button:focus-visible,select:focus-visible,input:focus-visible,.cta:focus-visible{outline:2px solid var(--accent2);outline-offset:2px}
 
-.tabs{display:flex;gap:0;border:1px solid var(--line);border-radius:6px;overflow:hidden;margin-bottom:18px;background:var(--surface)}
-.tabs button{flex:1;font:inherit;font-weight:700;padding:12px 8px;border:0;background:transparent;color:var(--muted);cursor:pointer}
-.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-fg)}
+.hero{position:relative;min-height:240px;background:linear-gradient(160deg,#2c6ea8,#0095d9 55%,#8fcbea);color:#fff;overflow:hidden;display:flex;align-items:center}
+.hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,40,80,.55),rgba(0,40,80,.15))}
+.hero .inner{position:relative;z-index:1;padding-block:44px 40px;width:100%}
+.hero .eyebrow{font-family:var(--latin);letter-spacing:.3em;font-size:13px;margin:0 0 6px;opacity:.95}
+h1{font-size:clamp(26px,4.2vw,40px);font-weight:700;line-height:1.3;margin:0;text-shadow:0 2px 12px rgba(0,0,0,.35);text-wrap:balance}
+.hero p.lead{margin:10px 0 0;font-size:14px;max-width:34em;text-shadow:0 1px 6px rgba(0,0,0,.4)}
 
-.calc{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
-@media (max-width:640px){.calc{grid-template-columns:1fr}}
-.panel{min-width:0}
-label{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.main{padding-block:28px 56px}
+.tabs{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:20px;background:var(--surface)}
+.tabs button{flex:1;font:inherit;font-weight:700;padding:13px 8px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--brand);color:var(--on-brand)}
+
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media (max-width:680px){.calc{grid-template-columns:1fr}}
+.panel{min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:20px}
+label{display:block;font-size:13px;font-weight:700;color:var(--brand);margin-bottom:6px}
 .field{margin-bottom:16px}
-select,input[type=number]{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg)}
-.row{display:flex;gap:10px}
-.row>*{flex:1;min-width:0}
+select,input[type=number]{font:inherit;width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg)}
 .cars{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.car{border:1px solid var(--line);border-radius:6px;padding:12px;background:var(--surface);cursor:pointer}
+.car{position:relative;border:1px solid var(--line);border-radius:4px;padding:12px;background:var(--surface);cursor:pointer}
 .car input{position:absolute;opacity:0}
-.car:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
-.car:has(input:focus-visible){outline:2px solid var(--accent)}
+.car:has(input:checked){border-color:var(--brand);background:var(--brand-soft)}
+.car:has(input:focus-visible){outline:2px solid var(--accent2)}
 .car b{display:block;font-size:15px}
 .car span{font-size:12px;color:var(--muted)}
 .hint{font-size:12px;color:var(--muted);margin-top:6px}
 
-.result{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:20px;position:sticky;top:env(safe-area-inset-top,0px)}
-.result .eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
-.price{font-family:var(--display);font-weight:800;font-size:clamp(36px,7vw,52px);line-height:1.1;margin:6px 0 2px;font-variant-numeric:tabular-nums}
-.price small{font-size:.45em;font-weight:600;margin-left:4px}
+.result{background:var(--surface);border-top:4px solid var(--brand);border:1px solid var(--line);border-top:4px solid var(--brand);border-radius:4px;padding:22px;position:sticky;top:env(safe-area-inset-top,0px)}
+.result .eyebrow{font-family:var(--latin);font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--brand);font-weight:700}
+.price{font-family:var(--num);font-weight:700;font-size:clamp(40px,7vw,56px);line-height:1.1;margin:6px 0 2px;color:var(--fg);font-variant-numeric:tabular-nums}
+.price small{font-size:.4em;font-weight:500;margin-left:4px;color:var(--muted)}
 .about{font-size:13px;color:var(--muted)}
 .breakdown{list-style:none;padding:0;margin:16px 0 0;border-top:1px solid var(--line)}
 .breakdown li{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
-.breakdown li span:last-child{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.breakdown li span:last-child{font-family:var(--num);font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .notes{font-size:12px;color:var(--muted);margin-top:14px;padding-left:1.2em}
 .notes li{margin-bottom:3px}
-.cta{display:block;text-align:center;margin-top:18px;padding:13px;border-radius:6px;background:var(--accent);color:var(--accent-fg);font-weight:700;text-decoration:none}
+.cta{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;padding:14px;border-radius:4px;background:var(--accent2);color:#fff;font-weight:700;text-decoration:none}
+.cta::after{content:"";width:0;height:0;border-left:7px solid #fff;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.cta:hover{filter:brightness(1.08)}
+.tel-note{text-align:center;font-size:12px;color:var(--muted);margin-top:10px}
 
-h2{font-family:var(--display);font-size:20px;margin:40px 0 12px;font-weight:800}
-.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+h2{color:var(--brand);font-size:24px;font-weight:600;margin:44px 0 4px;text-align:center}
+.h2sub{font-family:var(--latin);text-align:center;color:var(--brand);letter-spacing:.2em;font-size:12px;margin:0 0 16px;text-transform:lowercase}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
 table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
-th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line)}
-th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
-td.num{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:13px;color:var(--on-brand);background:var(--brand);font-weight:700}
+td.num{text-align:right;font-family:var(--num);font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}
 tr:last-child td{border-bottom:0}
-tbody tr:hover{background:var(--accent-soft)}
+tbody tr:nth-child(even) td{background:var(--bg)}
+tbody tr:hover td{background:var(--brand-soft)}
 .toll{color:var(--peak);font-size:11px;font-weight:700;margin-left:6px}
-footer{margin-top:28px;font-size:12px;color:var(--muted)}
-@media (prefers-reduced-motion:no-preference){.price{transition:opacity .15s}}
+footer.note{margin-top:24px;font-size:12px;color:var(--muted)}
+.sitefoot{background:var(--brand);color:#fff;font-size:12px;text-align:center;padding-block:14px;margin-top:8px}
 </style>
 </head>
 <body>
 
-<div class="wrap">
-<header>
-  <h1><small data-i="brand">Fujikyu Yamanashi Hire</small><span data-i="title">料金シミュレータ</span></h1>
+<div class="topbar gutter"><div class="inner">
+  <a class="logo" href="https://www.fujiq-taxi.jp/"><img src="https://www.fujiq-taxi.jp/images/header/logo.png" alt="富士急山梨ハイヤー" onerror="this.setAttribute('data-failed','1')"><span class="alt" data-i="brandJa">富士急山梨ハイヤー</span></a>
+  <a class="tel" href="tel:0120818229"><small data-i="telLabel">タクシーのご注文</small>0120-818-229</a>
   <div class="lang" role="group" aria-label="Language">
     <button type="button" data-lang="ja" aria-pressed="true">日本語</button>
     <button type="button" data-lang="en" aria-pressed="false">English</button>
     <button type="button" data-lang="zh" aria-pressed="false">中文</button>
   </div>
-</header>
+</div></div>
+
+<div class="hero gutter">
+  <img src="https://www.fujiq-taxi.jp/en/images/plans/plan2/img1.jpg" alt="" aria-hidden="true" onerror="this.remove()">
+  <div class="inner">
+    <p class="eyebrow">Fare &amp; Charter Estimator</p>
+    <h1 data-i="title">料金シミュレータ</h1>
+    <p class="lead" data-i="lead">富士山駅・河口湖駅から主要観光地までの概算料金と、貸切観光タクシーの時間制料金をその場で確認できます。</p>
+  </div>
+</div>
+
+<div class="main gutter"><div class="inner">
 
 <div class="tabs" role="tablist">
   <button type="button" role="tab" id="tab-route" aria-selected="true" data-i="tabRoute">区間料金（メーター）</button>
@@ -148,19 +182,22 @@ footer{margin-top:28px;font-size:12px;color:var(--muted)}
     <div class="about" id="about"></div>
     <ul class="breakdown" id="breakdown"></ul>
     <ul class="notes" id="notes"></ul>
-    <a class="cta" href="#reserve" data-i="cta">この内容で予約・問い合わせ</a>
+    <a class="cta" href="https://www.fujiq-taxi.jp/inquiry/#r01" data-i="cta">この内容で予約・問い合わせ</a>
+    <p class="tel-note"><span data-i="telNote">お電話でのご注文</span> 0120-818-229</p>
   </aside>
 </div>
 
 <h2 data-i="tableTitle">主な区間の料金早見表</h2>
+<p class="h2sub">fare table</p>
 <div class="tablewrap">
 <table id="fareTable">
   <thead><tr><th data-i="thRoute">区間</th><th data-i="thKm">距離</th><th data-i="thMid">中型車</th><th data-i="thJumbo">ジャンボ</th></tr></thead>
   <tbody></tbody>
 </table>
 </div>
-<footer data-i="footer">料金は距離による概算です。渋滞等による時間併用運賃、深夜早朝割増（22:00〜5:00 2割増）、有料道路・駐車場代は含まれません。</footer>
-</div>
+<footer class="note" data-i="footer">料金は距離による概算です。渋滞等による時間併用運賃、深夜早朝割増（22:00〜5:00 2割増）、有料道路・駐車場代は含まれません。</footer>
+</div></div>
+<div class="sitefoot gutter">© Fujikyu Yamanashi-Hire Inc.</div>
 
 <script>
 const FARE={mid:{base:600,baseKm:1.2,step:229,hour:8000},jumbo:{base:680,baseKm:1.2,step:202,hour:9120}};
@@ -187,11 +224,11 @@ const ROUTES=[
 ];
 const I18N={
   ja:{brand:"Fujikyu Yamanashi Hire",title:"料金シミュレータ",tabRoute:"区間料金（メーター）",tabCharter:"貸切・観光タクシー（時間制）",carType:"車種",carMid:"中型車",carMidSub:"〜4名 / 初乗り600円",carJumbo:"ジャンボ",carJumboSub:"〜9名 / 初乗り680円",from:"出発地",to:"目的地",km:"距離（km）",kmHint:"区間を選ぶと自動入力。上の一覧にない場合は距離を直接入力してください。",hours:"利用時間",pax:"人数",charterHint:"観光タクシーは出発から帰着までの時間で計算します。富士山五合目・忍野八海・山中湖など、ご希望の行き先を予約時にお知らせください。",estimate:"概算料金",cta:"この内容で予約・問い合わせ",tableTitle:"主な区間の料金早見表",thRoute:"区間",thKm:"距離",thMid:"中型車",thJumbo:"ジャンボ",footer:"料金は距離による概算です。渋滞等による時間併用運賃、深夜早朝割増（22:00〜5:00 2割増）、有料道路・駐車場代は含まれません。",
-    hourUnit:"時間",perHour:"1時間あたり",base:"初乗り（1.2kmまで）",add:"加算運賃",addUnit:"ごとに100円",dist:"距離",total:"合計",approx:"約",yen:"円",pp:"1人あたり約",paxOver:"5名以上はジャンボをお選びください。",tollNote:"富士スバルラインの通行料が別途かかります。",n1:"実際の料金はメーターによります。",n2:"深夜早朝（22:00〜5:00）は2割増。",n3:"有料道路・駐車場は実費。",c1:"時間内の走行距離に制限はありません。",c2:"有料道路・駐車場・入場料は実費。",c3:"ご希望コースはご予約時にご相談ください。",toll:"有料道路あり"},
+    hourUnit:"時間",perHour:"1時間あたり",base:"初乗り（1.2kmまで）",add:"加算運賃",addUnit:"ごとに100円",dist:"距離",total:"合計",approx:"約",yen:"円",pp:"1人あたり約",paxOver:"5名以上はジャンボをお選びください。",tollNote:"富士スバルラインの通行料が別途かかります。",n1:"実際の料金はメーターによります。",n2:"深夜早朝（22:00〜5:00）は2割増。",n3:"有料道路・駐車場は実費。",c1:"時間内の走行距離に制限はありません。",c2:"有料道路・駐車場・入場料は実費。",c3:"ご希望コースはご予約時にご相談ください。",toll:"有料道路あり",brandJa:"富士急山梨ハイヤー",telLabel:"タクシーのご注文",telNote:"お電話でのご注文",lead:"富士山駅・河口湖駅から主要観光地までの概算料金と、貸切観光タクシーの時間制料金をその場で確認できます。"},
   en:{brand:"Fujikyu Yamanashi Hire",title:"Fare Estimator",tabRoute:"Point to point (meter)",tabCharter:"Charter / sightseeing (hourly)",carType:"Vehicle",carMid:"Standard",carMidSub:"up to 4 / base ¥600",carJumbo:"Jumbo van",carJumboSub:"up to 9 / base ¥680",from:"From",to:"To",km:"Distance (km)",kmHint:"Filled in automatically when you pick a route. Not listed? Type the distance.",hours:"Duration",pax:"Passengers",charterHint:"Sightseeing charters are billed by time from pick-up to drop-off. Tell us your destinations (Mt. Fuji 5th Station, Oshino Hakkai, Lake Yamanaka…) when booking.",estimate:"Estimated fare",cta:"Book or ask about this trip",tableTitle:"Fares for popular routes",thRoute:"Route",thKm:"Distance",thMid:"Standard",thJumbo:"Jumbo",footer:"Estimates are based on distance only. Time-based charges in traffic, the late-night surcharge (20% from 22:00 to 5:00), tolls and parking are not included.",
-    hourUnit:"h",perHour:"Per hour",base:"Base fare (first 1.2 km)",add:"Distance charge",addUnit:"per ¥100",dist:"Distance",total:"Total",approx:"approx.",yen:"",pp:"about per person",paxOver:"For 5 or more passengers, choose the Jumbo van.",tollNote:"The Fuji Subaru Line toll is charged separately.",n1:"The actual fare is set by the meter.",n2:"Late-night surcharge 20% (22:00–5:00).",n3:"Tolls and parking are extra.",c1:"No distance limit within the booked time.",c2:"Tolls, parking and admission fees are extra.",c3:"Tell us your preferred route when booking.",toll:"toll road"},
+    hourUnit:"h",perHour:"Per hour",base:"Base fare (first 1.2 km)",add:"Distance charge",addUnit:"per ¥100",dist:"Distance",total:"Total",approx:"approx.",yen:"",pp:"about per person",paxOver:"For 5 or more passengers, choose the Jumbo van.",tollNote:"The Fuji Subaru Line toll is charged separately.",n1:"The actual fare is set by the meter.",n2:"Late-night surcharge 20% (22:00–5:00).",n3:"Tolls and parking are extra.",c1:"No distance limit within the booked time.",c2:"Tolls, parking and admission fees are extra.",c3:"Tell us your preferred route when booking.",toll:"toll road",brandJa:"Fujikyu Yamanashi Hire",telLabel:"Book by phone",telNote:"Or call",lead:"Instant estimates from Mt. Fuji and Kawaguchiko stations to the main sights, plus hourly rates for private sightseeing charters."},
   zh:{brand:"Fujikyu Yamanashi Hire",title:"车费估算",tabRoute:"区间车费（计程表）",tabCharter:"包车·观光出租车（按小时）",carType:"车型",carMid:"中型车",carMidSub:"最多4人 / 起步价600日元",carJumbo:"大型车（Jumbo）",carJumboSub:"最多9人 / 起步价680日元",from:"出发地",to:"目的地",km:"距离（公里）",kmHint:"选择区间后自动填写。列表中没有的区间请直接输入距离。",hours:"使用时间",pax:"人数",charterHint:"观光出租车按从出发到返回的时间计费。预约时请告知您想去的地方（富士山五合目、忍野八海、山中湖等）。",estimate:"预估车费",cta:"按此内容预约·咨询",tableTitle:"主要区间车费一览",thRoute:"区间",thKm:"距离",thMid:"中型车",thJumbo:"大型车",footer:"车费为按距离估算。因堵车产生的时间费用、深夜加价（22:00〜5:00加收20%）、高速公路费及停车费不包含在内。",
-    hourUnit:"小时",perHour:"每小时",base:"起步价（1.2公里内）",add:"加算车费",addUnit:"每100日元",dist:"距离",total:"合计",approx:"约",yen:"日元",pp:"每人约",paxOver:"5人以上请选择大型车。",tollNote:"富士斯巴鲁线通行费另计。",n1:"实际车费以计程表为准。",n2:"深夜（22:00〜5:00）加收20%。",n3:"高速公路费、停车费另计。",c1:"预约时间内不限行驶距离。",c2:"高速费、停车费、门票另计。",c3:"行程路线可在预约时商量。",toll:"有收费道路"}
+    hourUnit:"小时",perHour:"每小时",base:"起步价（1.2公里内）",add:"加算车费",addUnit:"每100日元",dist:"距离",total:"合计",approx:"约",yen:"日元",pp:"每人约",paxOver:"5人以上请选择大型车。",tollNote:"富士斯巴鲁线通行费另计。",n1:"实际车费以计程表为准。",n2:"深夜（22:00〜5:00）加收20%。",n3:"高速公路费、停车费另计。",c1:"预约时间内不限行驶距离。",c2:"高速费、停车费、门票另计。",c3:"行程路线可在预约时商量。",toll:"有收费道路",brandJa:"富士急山梨Hire",telLabel:"电话叫车",telNote:"电话预约",lead:"即时查看从富士山站、河口湖站到主要景点的预估车费，以及包车观光出租车的按小时费用。"}
 };
 let lang="ja",mode="route";
 const $=id=>document.getElementById(id);
